@@ -196,6 +196,9 @@ func initModels() error {
 	if err := migrateSyncOrphanColumns(); err != nil {
 		return err
 	}
+	if err := migrateNodeTrafficMultiplier(); err != nil {
+		return err
+	}
 	if err := migrateClientEmailLowerIndex(); err != nil {
 		return err
 	}
@@ -381,6 +384,16 @@ func migrateClientResetWeekdayColumns() error {
 		}
 	}
 	return nil
+}
+
+// AutoMigrate adds the column; this backfills rows an older SQLite ALTER TABLE
+// leaves NULL (and repairs any sub-1x value) so every node bills at 1x until
+// an operator explicitly raises the multiplier.
+func migrateNodeTrafficMultiplier() error {
+	if !db.Migrator().HasColumn(&model.Node{}, "traffic_multiplier") {
+		return nil
+	}
+	return db.Exec("UPDATE nodes SET traffic_multiplier = 100 WHERE traffic_multiplier IS NULL OR traffic_multiplier < 100").Error
 }
 
 // AutoMigrate adds the column; this only backfills the NULLs an older SQLite
