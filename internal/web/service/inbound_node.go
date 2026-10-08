@@ -1053,7 +1053,7 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 						database.GreatestExpr("last_online", "?"),
 					),
 					billedUp, billedDown, cs.Enable, cs.Total,
-					cs.ExpiryTime, cs.Reset, cs.ResetDay, cs.ResetCount,
+					cs.ExpiryTime, cs.Reset, cs.ResetDay, cs.ResetWeekday, cs.ResetCount,
 					cs.LastOnline, cs.Email,
 				).Error; err != nil {
 					return false, err
