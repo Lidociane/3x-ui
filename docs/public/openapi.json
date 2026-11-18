@@ -3216,6 +3216,11 @@
             "minimum": 0,
             "type": "integer"
           },
+          "ports": {
+            "description": "PortList is the full listen spec when one inbound answers on several ports\n(\"443,8443\" / \"20000-20100\"); Port stays the first port of that spec.",
+            "example": "20000-20100",
+            "type": "string"
+          },
           "protocol": {
             "enum": [
               "vmess",
@@ -5383,6 +5388,7 @@
                       "nodeId": null,
                       "originNodeGuid": "",
                       "port": 443,
+                      "ports": "20000-20100",
                       "protocol": "vless",
                       "remark": "VLESS-443",
                       "settings": null,
@@ -16955,6 +16961,7 @@
                   "nodeId": null,
                   "originNodeGuid": "",
                   "port": 443,
+                  "ports": "20000-20100",
                   "protocol": "vless",
                   "remark": "VLESS-443",
                   "settings": null,

@@ -1297,6 +1297,9 @@ func (s *InboundService) normalizeMtprotoXrayPort(inbound *model.Inbound, oldSet
 func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
 	defer InvalidateSubData()
 	inbound.Id = 0
+	if err := normalizeInboundPortList(inbound); err != nil {
+		return inbound, false, err
+	}
 	if err := normalizeVlessFallbacks(inbound); err != nil {
 		return nil, false, err
 	}
@@ -2024,6 +2027,9 @@ func (s *InboundService) validateUpdatedInboundClients(inbound, existing *model.
 
 func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
 	defer InvalidateSubData()
+	if err := normalizeInboundPortList(inbound); err != nil {
+		return inbound, false, err
+	}
 	legacyShareAddr := legacyMtprotoShareAddr(inbound)
 	inbound.TrafficResetDay = normalizeTrafficResetDay(inbound.TrafficResetDay)
 	// Normalize streamSettings based on protocol

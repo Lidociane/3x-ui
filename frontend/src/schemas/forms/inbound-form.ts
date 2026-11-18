@@ -90,6 +90,14 @@ export const InboundFormBaseSchema = z.object({
   remark: z.string().default(''),
   enable: z.boolean().default(true),
   port: InboundPortSchema,
+  // Optional listen range ("20000-20010" / "443,8443"); port stays the first.
+  ports: z
+    .string()
+    .default('')
+    .refine(
+      (v) => !v || /^\d{1,5}(-\d{1,5})?(,\d{1,5}(-\d{1,5})?)*$/.test(v),
+      'pages.inbounds.toasts.portRange',
+    ),
   listen: z.string().default(''),
   tag: z.string().default(''),
   expiryTime: z.number().int().default(0),

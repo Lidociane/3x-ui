@@ -200,6 +200,9 @@ func initModels() error {
 	if err := migrateVmessRemovedSecurities(); err != nil {
 		return err
 	}
+	if err := migrateInboundPortList(); err != nil {
+		return err
+	}
 	if err := migrateTgIDIndex(); err != nil {
 		return err
 	}
@@ -413,6 +416,37 @@ func migrateSyncOrphanColumns() error {
 
 // The client identity checks match emails case-insensitively; without an
 // expression index (which no GORM struct tag can declare) they seq-scan.
+// migrateInboundPortList repairs rows whose stored spec disagrees with Port
+// (hand-edited or half-written), so the generated config and the share links
+// never advertise different ports for the same inbound.
+func migrateInboundPortList() error {
+	if !db.Migrator().HasColumn(&model.Inbound{}, "port_list") {
+		return nil
+	}
+	var rows []model.Inbound
+	if err := db.Select("id", "port", "port_list").Where("port_list IS NOT NULL AND port_list <> ''").Find(&rows).Error; err != nil {
+		return err
+	}
+	for _, row := range rows {
+		port, list, err := xray.ParsePortList(row.PortList)
+		if err != nil {
+			// Unusable spec: keep the single port the row already serves.
+			if err := db.Model(&model.Inbound{}).Where("id = ?", row.Id).Update("port_list", "").Error; err != nil {
+				return err
+			}
+			continue
+		}
+		if port == row.Port && list == row.PortList {
+			continue
+		}
+		if err := db.Model(&model.Inbound{}).Where("id = ?", row.Id).
+			Updates(map[string]any{"port": port, "port_list": list}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func migrateClientEmailLowerIndex() error {
 	if db.Migrator().HasIndex(&model.ClientRecord{}, "idx_clients_email_lower") {
 		return nil

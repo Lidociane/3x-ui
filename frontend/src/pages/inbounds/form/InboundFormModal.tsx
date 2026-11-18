@@ -208,6 +208,7 @@ function buildAddModeValues(): InboundFormValues {
     },
     sniffing: SniffingSchema.parse({}),
     port: RandomUtil.randomInteger(10000, 60000),
+    ports: '',
     listen: '',
     tag: '',
     enable: true,
@@ -792,6 +793,15 @@ export default function InboundFormModal({
         rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.port) }}
       >
         <InputNumber min={isUdsListen ? 0 : 1} max={65535} />
+      </FormField>
+
+      <FormField
+        name="ports"
+        label={t('pages.inbounds.ports')}
+        tooltip={t('pages.inbounds.portsHelp')}
+        rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.ports) }}
+      >
+        <Input placeholder="20000-20010" allowClear />
       </FormField>
 
       <Form.Item

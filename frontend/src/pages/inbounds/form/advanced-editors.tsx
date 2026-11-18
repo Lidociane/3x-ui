@@ -165,6 +165,7 @@ export function AdvancedAllEditor({
     const out: Record<string, unknown> = {
       listen: current.listen ?? '',
       port: current.port ?? 0,
+      ports: current.ports || undefined,
       protocol: current.protocol ?? '',
       tag: current.tag ?? '',
       settings: settingsView,
@@ -218,6 +219,9 @@ export function AdvancedAllEditor({
         if (typeof parsed.listen === 'string') setValue('listen', parsed.listen);
         if (typeof parsed.port === 'number' && Number.isFinite(parsed.port)) {
           setValue('port', parsed.port);
+        }
+        if (typeof parsed.ports === 'string') {
+          setValue('ports', parsed.ports);
         }
         if (typeof parsed.protocol === 'string') setValue('protocol', parsed.protocol);
         if (typeof parsed.tag === 'string') setValue('tag', parsed.tag);

@@ -67,8 +67,11 @@ type Inbound struct {
 	ClientStats          []xray.ClientTraffic `gorm:"foreignKey:InboundId;references:Id" json:"clientStats" form:"clientStats"`                                                                                     // Client traffic statistics
 
 	// Xray configuration fields
-	Listen            string   `json:"listen" form:"listen"`
-	Port              int      `json:"port" form:"port" validate:"gte=0,lte=65535" example:"443"`
+	Listen string `json:"listen" form:"listen"`
+	Port   int    `json:"port" form:"port" validate:"gte=0,lte=65535" example:"443"`
+	// PortList is the full listen spec when one inbound answers on several ports
+	// ("443,8443" / "20000-20100"); Port stays the first port of that spec.
+	PortList          string   `json:"ports,omitempty" form:"ports" gorm:"column:port_list" example:"20000-20100"`
 	Protocol          Protocol `json:"protocol" form:"protocol" validate:"required,oneof=vmess vless trojan shadowsocks wireguard hysteria http mixed tunnel tun mtproto amneziawg tuic masque" example:"vless"`
 	Settings          string   `json:"settings" form:"settings"`
 	StreamSettings    string   `json:"streamSettings" form:"streamSettings"`
@@ -400,6 +403,7 @@ func (i *Inbound) GenXrayInboundConfig() *xray.InboundConfig {
 	return &xray.InboundConfig{
 		Listen:         json_util.RawMessage(listen),
 		Port:           i.Port,
+		PortList:       i.PortList,
 		Protocol:       protocol,
 		Settings:       json_util.RawMessage(settings),
 		StreamSettings: json_util.RawMessage(streamSettings),

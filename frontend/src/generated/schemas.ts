@@ -3190,6 +3190,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "ports": {
+        "description": "PortList is the full listen spec when one inbound answers on several ports\n(\"443,8443\" / \"20000-20100\"); Port stays the first port of that spec.",
+        "example": "20000-20100",
+        "type": "string"
+      },
       "protocol": {
         "enum": [
           "vmess",

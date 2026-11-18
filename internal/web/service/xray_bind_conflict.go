@@ -55,8 +55,10 @@ func rawBindConflicts(cfg *xray.Config) []bindConflict {
 	byPort := make(map[int][]*xray.InboundConfig, len(cfg.InboundConfigs))
 	for i := range cfg.InboundConfigs {
 		ib := &cfg.InboundConfigs[i]
-		if ib.Port > 0 {
-			byPort[ib.Port] = append(byPort[ib.Port], ib)
+		for _, port := range ib.Ports() {
+			if port > 0 {
+				byPort[port] = append(byPort[port], ib)
+			}
 		}
 	}
 

@@ -255,7 +255,7 @@ var userDiffableProtocols = map[string]struct{}{"vless": {}, "vmess": {}, "troja
 // diffInboundUsers emits per-user AlterInbound ops when two same-tag inbounds
 // differ only in settings.clients, so the handler (and its listener) survives.
 func diffInboundUsers(oldIb, newIb *InboundConfig, diff *HotDiff) bool {
-	if oldIb.Port != newIb.Port || oldIb.Protocol != newIb.Protocol || oldIb.Tag != newIb.Tag {
+	if oldIb.Port != newIb.Port || oldIb.PortList != newIb.PortList || oldIb.Protocol != newIb.Protocol || oldIb.Tag != newIb.Tag {
 		return false
 	}
 	if _, ok := userDiffableProtocols[oldIb.Protocol]; !ok {
@@ -559,6 +559,7 @@ func routingWithoutReloadable(raw []byte) ([]byte, bool) {
 // inbound.
 func inboundEqualNormalized(a, b *InboundConfig) bool {
 	return a.Port == b.Port &&
+		a.PortList == b.PortList &&
 		a.Protocol == b.Protocol &&
 		a.Tag == b.Tag &&
 		rawEqualNormalized(a.Listen, b.Listen) &&

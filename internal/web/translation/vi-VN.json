@@ -325,6 +325,8 @@
       },
       "protocol": "Giao thức",
       "port": "Cổng",
+      "ports": "Port range",
+      "portsHelp": "Optional: one inbound can listen on several ports, e.g. 20000-20010 or 443,8443. Leave empty for the single port above.",
       "portMap": "Ánh xạ cổng",
       "traffic": "Lưu lượng",
       "speed": "Tốc độ",

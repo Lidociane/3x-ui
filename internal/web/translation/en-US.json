@@ -325,6 +325,8 @@
       },
       "protocol": "Protocol",
       "port": "Port",
+      "ports": "Port range",
+      "portsHelp": "Optional: one inbound can listen on several ports, e.g. 20000-20010 or 443,8443. Leave empty for the single port above.",
       "portMap": "Port Mapping",
       "traffic": "Traffic",
       "speed": "Speed",

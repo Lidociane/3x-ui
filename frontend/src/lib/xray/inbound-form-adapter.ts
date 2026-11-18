@@ -41,6 +41,7 @@ const XMUX_DEFAULTS = XHttpXmuxSchema.parse({});
 
 export interface RawInboundRow {
   port?: number;
+  ports?: string;
   listen?: string;
   protocol?: string;
   tag?: string;
@@ -80,6 +81,7 @@ export interface WireInboundPayload {
   lastTrafficResetTime: number;
   listen: string;
   port: number;
+  ports?: string;
   protocol: string;
   settings: string;
   streamSettings: string;
@@ -239,6 +241,7 @@ export function rawInboundToFormValues(row: RawInboundRow): InboundFormValues {
     disableFlow: row.disableFlow ?? false,
     protocol,
     settings,
+    ports: row.ports ?? '',
   } as InboundFormValues;
 }
 
@@ -389,6 +392,7 @@ export function formValuesToWirePayload(
     lastTrafficResetTime: values.lastTrafficResetTime,
     listen: values.listen,
     port: values.port,
+    ports: values.ports ?? '',
     protocol: values.protocol,
     settings: JSON.stringify(settingsPruned),
     streamSettings: streamPruned ? JSON.stringify(streamPruned) : '',
