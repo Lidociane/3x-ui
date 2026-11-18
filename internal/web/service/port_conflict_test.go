@@ -1068,8 +1068,8 @@ func TestNormalizeInboundPortListRejectsSidecarProtocols(t *testing.T) {
 	if err := normalizeInboundPortList(vless); err != nil {
 		t.Fatalf("vless rejected a port range: %v", err)
 	}
-	// Port 与范围是两个独立设置：范围归一化不应改写 Port
-	if vless.Port != 1 || vless.PortList != "20000-20010" {
-		t.Fatalf("normalized = (%d, %q), want (1, \"20000-20010\")", vless.Port, vless.PortList)
+	// 单字段语义："6409,20000-20010" 的首端口落到 Port，完整 spec 落到 PortList
+	if vless.Port != 20000 || vless.PortList != "20000-20010" {
+		t.Fatalf("normalized = (%d, %q), want (20000, \"20000-20010\")", vless.Port, vless.PortList)
 	}
 }

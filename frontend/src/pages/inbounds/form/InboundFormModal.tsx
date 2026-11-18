@@ -317,8 +317,6 @@ export default function InboundFormModal({
     protocol !== Protocols.TUIC;
 
   const wPort = useWatch({ control, name: 'port' });
-  const wListen = (useWatch({ control, name: 'listen' }) ?? '') as string;
-  const isUdsListen = wListen.startsWith('/') || wListen.startsWith('@');
   const wNodeId = useWatch({ control, name: 'nodeId' }) ?? null;
   const shareAddrStrategy = useWatch({ control, name: 'shareAddrStrategy' }) ?? 'node';
   const wTag = (useWatch({ control, name: 'tag' }) ?? '') as string;
@@ -788,20 +786,12 @@ export default function InboundFormModal({
       )}
 
       <FormField
-        name="port"
-        label={t('pages.inbounds.port')}
-        rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.port) }}
-      >
-        <InputNumber min={isUdsListen ? 0 : 1} max={65535} />
-      </FormField>
-
-      <FormField
         name="ports"
-        label={t('pages.inbounds.ports')}
+        label={t('pages.inbounds.port')}
         tooltip={t('pages.inbounds.portsHelp')}
         rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.ports) }}
       >
-        <Input placeholder="20000-20010" allowClear />
+        <Input placeholder="6409,20000-20010" allowClear />
       </FormField>
 
       <Form.Item

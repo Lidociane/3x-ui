@@ -19,10 +19,13 @@ func normalizeInboundPortList(inbound *model.Inbound) error {
 	if !protocolSupportsPortList(inbound.Protocol) {
 		return fmt.Errorf("protocol %s listens on a single port", inbound.Protocol)
 	}
-	_, list, err := xray.ParsePortList(inbound.PortList)
+	port, list, err := xray.ParsePortList(inbound.PortList)
 	if err != nil {
 		return fmt.Errorf("ports: %w", err)
 	}
+	// 面板只有一个"端口"输入框（"6409,20000-20010"）：首端口落到 Port，
+	// 完整 spec 落到 PortList，xray 监听两者并集。
+	inbound.Port = port
 	inbound.PortList = list
 	return nil
 }

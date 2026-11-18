@@ -241,7 +241,7 @@ export function rawInboundToFormValues(row: RawInboundRow): InboundFormValues {
     disableFlow: row.disableFlow ?? false,
     protocol,
     settings,
-    ports: row.ports ?? '',
+    ports: row.ports || (row.port ? String(row.port) : ''),
   } as InboundFormValues;
 }
 
