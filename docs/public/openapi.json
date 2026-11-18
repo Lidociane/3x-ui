@@ -4670,7 +4670,7 @@
         "type": "object"
       },
       "Sponsor": {
-        "description": "Sponsor is one paid placement published in the repo's sponsors.json.",
+        "description": "Sponsor is one paid placement published in the repo's sponsors.json.\nThe type stays so the panel's API surface (and its generated docs) match\nupstream even though this fork never serves a placement.",
         "properties": {
           "enable": {
             "example": true,
