@@ -180,7 +180,13 @@ print(p[0] if p else '?')
 PY
 )" || PORT_INFO="?"
 [[ "$PORT_INFO" != "?" ]] || fail "读不到面板端口（拒绝在无法验证的情况下宣告成功）"
-curl -sk -o /dev/null -m 10 "https://127.0.0.1:$PORT_INFO/" || fail "面板端口 $PORT_INFO 无响应"
+# 面板在 xray 起来后才开始监听，探测要重试几秒，否则误判失败并触发回滚
+panel_ok=0
+for _ in $(seq 1 20); do
+  if curl -sk -o /dev/null -m 5 "https://127.0.0.1:$PORT_INFO/" 2>/dev/null; then panel_ok=1; break; fi
+  sleep 2
+done
+[[ $panel_ok -eq 1 ]] || fail "面板端口 $PORT_INFO 无响应（重试 20 次后）"
 
 INB_AFTER="$(python3 - <<'PY'
 import sqlite3

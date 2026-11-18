@@ -2402,6 +2402,11 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 			needRestart = true
 		}
 	}
+	// 端口范围走独立列：更新路径按列白名单写库，不显式落这一列会被静默丢弃
+	if err := database.GetDB().Model(&model.Inbound{}).Where("id = ?", inbound.Id).
+		Update("port_list", inbound.PortList).Error; err != nil {
+		return inbound, false, err
+	}
 	return inbound, needRestart, nil
 }
 
