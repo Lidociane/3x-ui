@@ -428,7 +428,7 @@ func migrateInboundPortList() error {
 		return err
 	}
 	for _, row := range rows {
-		port, list, err := xray.ParsePortList(row.PortList)
+		_, list, err := xray.ParsePortList(row.PortList)
 		if err != nil {
 			// Unusable spec: keep the single port the row already serves.
 			if err := db.Model(&model.Inbound{}).Where("id = ?", row.Id).Update("port_list", "").Error; err != nil {
@@ -436,11 +436,13 @@ func migrateInboundPortList() error {
 			}
 			continue
 		}
-		if port == row.Port && list == row.PortList {
+		// Port and the range are independent settings: only the spec itself is
+		// normalized here, never the operator's single port.
+		if list == row.PortList {
 			continue
 		}
 		if err := db.Model(&model.Inbound{}).Where("id = ?", row.Id).
-			Updates(map[string]any{"port": port, "port_list": list}).Error; err != nil {
+			Update("port_list", list).Error; err != nil {
 			return err
 		}
 	}

@@ -3,6 +3,7 @@ package xray
 import (
 	"bytes"
 	"encoding/json"
+	"sort"
 	"strconv"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
@@ -83,16 +84,33 @@ func (c *InboundConfig) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(raw.Port, &c.Port)
 }
 
-// Ports expands this inbound's listen spec into the ports it binds.
+// Ports is the union of the single port and the optional range: the operator
+// sets both fields independently, so the inbound must bind both.
 func (c *InboundConfig) Ports() []int {
-	return ExpandPortList(c.PortList, c.Port)
+	seen := make(map[int]struct{}, 8)
+	if c.Port > 0 {
+		seen[c.Port] = struct{}{}
+	}
+	for _, port := range ExpandPortList(c.PortList, 0) {
+		seen[port] = struct{}{}
+	}
+	ports := make([]int, 0, len(seen))
+	for port := range seen {
+		ports = append(ports, port)
+	}
+	sort.Ints(ports)
+	return ports
 }
 
 func (c InboundConfig) portJSON() (json.RawMessage, error) {
-	if c.PortList != "" {
-		return json.Marshal(c.PortList)
+	if c.PortList == "" {
+		return json.RawMessage(strconv.Itoa(c.Port)), nil
 	}
-	return json.RawMessage(strconv.Itoa(c.Port)), nil
+	ports := c.Ports()
+	if len(ports) == 1 {
+		return json.RawMessage(strconv.Itoa(ports[0])), nil
+	}
+	return json.Marshal(compressPorts(ports))
 }
 
 // Equals compares two InboundConfig instances for deep equality.

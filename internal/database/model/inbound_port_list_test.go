@@ -30,6 +30,23 @@ func TestInboundGenXrayInboundConfigPortList(t *testing.T) {
 			t.Fatalf("generated config = %s, want a string port range", raw)
 		}
 	})
+	t.Run("port plus range stay separate", func(t *testing.T) {
+		ib := Inbound{
+			Port:           6408,
+			PortList:       "20000-20010",
+			Protocol:       VLESS,
+			Settings:       "{}",
+			StreamSettings: "{}",
+			Tag:            "in-6408-range",
+		}
+		raw, err := json.Marshal(ib.GenXrayInboundConfig())
+		if err != nil {
+			t.Fatalf("marshal generated config: %v", err)
+		}
+		if !strings.Contains(string(raw), `"port":"6408,20000-20010"`) {
+			t.Fatalf("generated config = %s, want the union of port and range", raw)
+		}
+	})
 	t.Run("single", func(t *testing.T) {
 		ib := Inbound{Port: 443, Protocol: VLESS, Settings: "{}", StreamSettings: "{}", Tag: "in-443"}
 		raw, err := json.Marshal(ib.GenXrayInboundConfig())

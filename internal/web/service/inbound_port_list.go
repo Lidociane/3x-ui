@@ -7,9 +7,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
-// normalizeInboundPortList folds an operator's listen spec into Port+PortList:
-// Port stays the first port (share links, the TUIC relay and bind probes read
-// it) and PortList keeps the full range for the config generator.
+// normalizeInboundPortList validates the optional range and leaves Port alone:
+// the panel exposes 端口 and 端口范围 as independent settings, and the inbound
+// binds their union (Port is what share links and the TUIC relay read).
 func normalizeInboundPortList(inbound *model.Inbound) error {
 	if inbound.PortList == "" {
 		return nil
@@ -19,11 +19,10 @@ func normalizeInboundPortList(inbound *model.Inbound) error {
 	if !protocolSupportsPortList(inbound.Protocol) {
 		return fmt.Errorf("protocol %s listens on a single port", inbound.Protocol)
 	}
-	port, list, err := xray.ParsePortList(inbound.PortList)
+	_, list, err := xray.ParsePortList(inbound.PortList)
 	if err != nil {
 		return fmt.Errorf("ports: %w", err)
 	}
-	inbound.Port = port
 	inbound.PortList = list
 	return nil
 }
@@ -40,7 +39,21 @@ func protocolSupportsPortList(p model.Protocol) bool {
 
 // inboundPorts expands a row's listen spec; Port stands in when no list is set.
 func inboundPorts(inbound *model.Inbound) []int {
-	return xray.ExpandPortList(inbound.PortList, inbound.Port)
+	if inbound.PortList == "" {
+		return xray.ExpandPortList("", inbound.Port)
+	}
+	seen := make(map[int]struct{}, 8)
+	if inbound.Port > 0 {
+		seen[inbound.Port] = struct{}{}
+	}
+	for _, port := range xray.ExpandPortList(inbound.PortList, 0) {
+		seen[port] = struct{}{}
+	}
+	ports := make([]int, 0, len(seen))
+	for port := range seen {
+		ports = append(ports, port)
+	}
+	return ports
 }
 
 // inboundHasPort reports whether the row binds port (single or inside a range).
