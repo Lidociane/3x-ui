@@ -317,6 +317,7 @@ export default function InboundFormModal({
     protocol !== Protocols.TUIC;
 
   const wPort = useWatch({ control, name: 'port' });
+  const wPorts = useWatch({ control, name: 'ports' });
   const wListen = (useWatch({ control, name: 'listen' }) ?? '') as string;
   const isUdsListen = wListen.startsWith('/') || wListen.startsWith('@');
   const wNodeId = useWatch({ control, name: 'nodeId' }) ?? null;
@@ -792,7 +793,7 @@ export default function InboundFormModal({
         label={t('pages.inbounds.port')}
         rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.port) }}
       >
-        <InputNumber min={isUdsListen ? 0 : 1} max={65535} />
+        <InputNumber min={isUdsListen ? 0 : 1} max={65535} disabled={Boolean(wPorts)} />
       </FormField>
 
       <FormField

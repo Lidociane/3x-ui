@@ -285,7 +285,7 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 	// so a local user inbound reusing its port would leave Xray binding the
 	// port twice (#5304). Nodes run their own Xray, so this only applies to
 	// the local panel.
-	if inbound.NodeID == nil && inbound.Port == reservedAPIPort() &&
+	if inbound.NodeID == nil && inboundHasPort(inbound, reservedAPIPort()) &&
 		newBits&transportTCP != 0 && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
 		return &portConflictDetail{
 			Tag:        "api",
@@ -297,7 +297,7 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 
 	// Egress SOCKS server holds loopback EgressPort when AWG outbounds are
 	// active; conflict check prevents inbounds from colliding with it.
-	if inbound.NodeID == nil && inbound.Port == amneziawgnet.EgressPort() &&
+	if inbound.NodeID == nil && inboundHasPort(inbound, amneziawgnet.EgressPort()) &&
 		newBits&transportTCP != 0 && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
 		return &portConflictDetail{
 			Tag:        "amneziawg-egress",
@@ -378,7 +378,7 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 	}
 
 	var candidates []*model.Inbound
-	q := db.Model(model.Inbound{}).Where("port = ?", inbound.Port)
+	q := db.Model(model.Inbound{}).Where("port = ? OR (port_list IS NOT NULL AND port_list <> '')", inbound.Port)
 	if ignoreId > 0 {
 		q = q.Where("id != ?", ignoreId)
 	}
@@ -391,6 +391,9 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 			continue
 		}
 		if !listenOverlaps(inboundBindAddr(c), inboundBindAddr(inbound)) {
+			continue
+		}
+		if !inboundsPortOverlap(c, inbound) {
 			continue
 		}
 		existingBits := inboundTransports(c.Protocol, c.StreamSettings, c.Settings)
@@ -519,7 +522,7 @@ func amneziawgnetSocksSelfConflict(inbound *model.Inbound, id int) string {
 		return ""
 	}
 	relayPort := amneziawgnet.SOCKSPortForInbound(id)
-	if inbound.Port != relayPort {
+	if !inboundHasPort(inbound, relayPort) {
 		return ""
 	}
 	return fmt.Sprintf("WireGuard port %d is inbound #%d's own SOCKS5 relay port on 127.0.0.1; choose a different WireGuard port",

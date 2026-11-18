@@ -27,6 +27,9 @@ func TestParsePortList(t *testing.T) {
 		{name: "zero", spec: "0", wantErr: true},
 		{name: "descending range", spec: "20010-20000", wantErr: true},
 		{name: "too many ports", spec: "1-65535", wantErr: true},
+		{name: "duplicate collapses", spec: "443,443", port: 443},
+		{name: "overlap merges", spec: "20000-20010,20005", port: 20000, list: "20000-20010"},
+		{name: "unordered sorts", spec: "8443,443", port: 443, list: "443,8443"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

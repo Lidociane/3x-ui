@@ -904,6 +904,7 @@ func wireInbound(ib *model.Inbound, remoteNodeID int) url.Values {
 	v.Set("expiryTime", strconv.FormatInt(ib.ExpiryTime, 10))
 	v.Set("listen", ib.Listen)
 	v.Set("port", strconv.Itoa(ib.Port))
+	v.Set("ports", ib.PortList)
 	v.Set("protocol", string(ib.Protocol))
 	v.Set("settings", ib.Settings)
 	v.Set("streamSettings", sanitizeStreamSettingsForRemote(ib.StreamSettings))

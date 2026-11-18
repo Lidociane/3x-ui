@@ -1015,3 +1015,58 @@ func TestCheckPortConflict_V6OnlyWildcardLeavesIPv4AddressFree(t *testing.T) {
 		})
 	}
 }
+
+// A narrow inbound inside an existing range must collide, and a new range must
+// collide with an existing single port inside it: the query only ever matched
+// Port before, so a saved range could make xray refuse to start later.
+func TestCheckPortConflict_PortRangeOverlap(t *testing.T) {
+	setupConflictDB(t)
+	seedInboundConflict(t, "vless-range", "0.0.0.0", 20000, model.VLESS, `{"network":"tcp"}`, `{}`)
+	if err := database.GetDB().Model(&model.Inbound{}).Where("tag = ?", "vless-range").
+		Update("port_list", "20000-20010").Error; err != nil {
+		t.Fatalf("seed port_list: %v", err)
+	}
+	svc := &InboundService{}
+	insideRange := &model.Inbound{
+		Tag: "vless-inside", Listen: "0.0.0.0", Port: 20005,
+		Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`,
+	}
+	exist, err := svc.checkPortConflict(insideRange, 0)
+	if err != nil {
+		t.Fatalf("checkPortConflict: %v", err)
+	}
+	if exist == nil || exist.Tag != "vless-range" {
+		t.Fatalf("port 20005 inside 20000-20010 must conflict, got %+v", exist)
+	}
+
+	rangeOverSingle := &model.Inbound{
+		Tag: "vless-range-new", Listen: "0.0.0.0", Port: 20000, PortList: "20000-20010",
+		Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`,
+	}
+	if exist, err := svc.checkPortConflict(rangeOverSingle, 0); err != nil || exist == nil {
+		t.Fatalf("a new range must conflict with the row it overlaps: exist=%+v err=%v", exist, err)
+	}
+	outside := &model.Inbound{Tag: "vless-outside", Listen: "0.0.0.0", Port: 21000,
+		Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`}
+	if exist, err := svc.checkPortConflict(outside, 0); err != nil || exist != nil {
+		t.Fatalf("port 21000 outside the range must not conflict: exist=%+v err=%v", exist, err)
+	}
+}
+
+// mtproto/tuic/amneziawg listen through a sidecar on Inbound.Port only, so a
+// range there would render in the panel and never bind.
+func TestNormalizeInboundPortListRejectsSidecarProtocols(t *testing.T) {
+	for _, protocol := range []model.Protocol{model.MTProto, model.TUIC, model.AmneziaWG} {
+		in := &model.Inbound{Protocol: protocol, Port: 443, PortList: "20000-20010"}
+		if err := normalizeInboundPortList(in); err == nil {
+			t.Fatalf("%s accepted a port range", protocol)
+		}
+	}
+	vless := &model.Inbound{Protocol: model.VLESS, Port: 1, PortList: "20000-20010"}
+	if err := normalizeInboundPortList(vless); err != nil {
+		t.Fatalf("vless rejected a port range: %v", err)
+	}
+	if vless.Port != 20000 || vless.PortList != "20000-20010" {
+		t.Fatalf("normalized = (%d, %q)", vless.Port, vless.PortList)
+	}
+}

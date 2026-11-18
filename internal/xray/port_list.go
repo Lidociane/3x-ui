@@ -2,6 +2,7 @@ package xray
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -11,17 +12,17 @@ import (
 const MaxPortListPorts = 256
 
 // ParsePortList validates "443", "443,8443" or "20000-20100" and returns the
-// first port plus the normalized list ("" when the spec is a single port).
+// smallest port plus the canonical spec ("" when only one port remains).
+// Overlapping or repeated entries are merged, so Port is always the lowest
+// port the inbound binds and the share link never names a port the listener
+// does not own.
 func ParsePortList(spec string) (int, string, error) {
 	spec = strings.ReplaceAll(strings.TrimSpace(spec), " ", "")
 	if spec == "" {
 		return 0, "", fmt.Errorf("port is required")
 	}
-	tokens := strings.Split(spec, ",")
-	normalized := make([]string, 0, len(tokens))
-	first := -1
-	total := 0
-	for _, token := range tokens {
+	seen := make(map[int]struct{}, 8)
+	for _, token := range strings.Split(spec, ",") {
 		lo, hi, ok := splitPortToken(token)
 		if !ok {
 			return 0, "", fmt.Errorf("invalid port %q: use 443, 443,8443 or 20000-20100", token)
@@ -32,19 +33,45 @@ func ParsePortList(spec string) (int, string, error) {
 		if hi < lo {
 			return 0, "", fmt.Errorf("invalid port range %q: end is below start", token)
 		}
-		if first < 0 {
-			first = lo
+		for port := lo; port <= hi; port++ {
+			seen[port] = struct{}{}
+			if len(seen) > MaxPortListPorts {
+				return 0, "", fmt.Errorf("at most %d ports per inbound", MaxPortListPorts)
+			}
 		}
-		total += hi - lo + 1
-		if total > MaxPortListPorts {
-			return 0, "", fmt.Errorf("at most %d ports per inbound", MaxPortListPorts)
+	}
+	ports := make([]int, 0, len(seen))
+	for port := range seen {
+		ports = append(ports, port)
+	}
+	sort.Ints(ports)
+	if len(ports) == 1 {
+		return ports[0], "", nil
+	}
+	return ports[0], compressPorts(ports), nil
+}
+
+// compressPorts renders a sorted, deduplicated port set back into "a,b-c" form.
+func compressPorts(ports []int) string {
+	var b strings.Builder
+	for i := 0; i < len(ports); {
+		j := i
+		for j+1 < len(ports) && ports[j+1] == ports[j]+1 {
+			j++
 		}
-		normalized = append(normalized, token)
+		if b.Len() > 0 {
+			b.WriteByte(',')
+		}
+		if i == j {
+			b.WriteString(strconv.Itoa(ports[i]))
+		} else {
+			b.WriteString(strconv.Itoa(ports[i]))
+			b.WriteByte('-')
+			b.WriteString(strconv.Itoa(ports[j]))
+		}
+		i = j + 1
 	}
-	if len(normalized) == 1 && !strings.Contains(normalized[0], "-") {
-		return first, "", nil
-	}
-	return first, strings.Join(normalized, ","), nil
+	return b.String()
 }
 
 // ExpandPortList returns the concrete ports an inbound binds; the single Port
