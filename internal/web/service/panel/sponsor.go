@@ -81,12 +81,10 @@ var (
 
 // GetSponsors returns the currently active sponsors. The remote file is cached, but the
 // window is re-checked on every call so a slot starts exactly at From and ends at Until.
+// GetSponsors is empty on this self-hosted fork: no placements are shown and
+// no sponsor feed is fetched, so the panel makes no outbound request for ads.
 func (s *PanelService) GetSponsors() (*SponsorList, error) {
-	raw, err := cachedSponsors()
-	if err != nil {
-		return nil, err
-	}
-	return activeSponsors(raw, sponsorNow()), nil
+	return &SponsorList{}, nil
 }
 
 func cachedSponsors() (*SponsorList, error) {
