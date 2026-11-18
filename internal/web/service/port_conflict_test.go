@@ -1046,8 +1046,10 @@ func TestCheckPortConflict_PortRangeOverlap(t *testing.T) {
 	if exist, err := svc.checkPortConflict(rangeOverSingle, 0); err != nil || exist == nil {
 		t.Fatalf("a new range must conflict with the row it overlaps: exist=%+v err=%v", exist, err)
 	}
-	outside := &model.Inbound{Tag: "vless-outside", Listen: "0.0.0.0", Port: 21000,
-		Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`}
+	outside := &model.Inbound{
+		Tag: "vless-outside", Listen: "0.0.0.0", Port: 21000,
+		Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`,
+	}
 	if exist, err := svc.checkPortConflict(outside, 0); err != nil || exist != nil {
 		t.Fatalf("port 21000 outside the range must not conflict: exist=%+v err=%v", exist, err)
 	}
